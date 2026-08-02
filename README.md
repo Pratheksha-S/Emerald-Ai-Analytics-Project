@@ -41,4 +41,4 @@ Power BI · SQL · Google BigQuery · IBM SPSS · Advanced Excel  · OpenRouter 
 ## Try It Live
 
 - **Dashboard Gallery** — click through all 7 report pages on the [live site](https://emerald-ai-analytics-portfolio-web.netlify.app)
-- **AI Assistant** — ask natural-language questions about the dashboard's findings (bring your own free 
+- **AI Assistant** — ask natural-language questions about the dashboard's findings 
