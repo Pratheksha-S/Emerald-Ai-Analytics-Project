@@ -1,6 +1,6 @@
-# AI-Powered Sales Performance Analytics — Emerald Jewelry Pvt. Ltd.
+# AI-Powered Sales Performance Analytics Developing a Smart Dashboard for Revenue Optimization  — Emerald Jewelry Industry India . Ltd.
 
-**MBA Business Analytics & HR — Major Project**
+**MBA Business Analytics — Major Project**
 By **S. Pratheksha** | Supervised by **Mrs. M. Saravanapriya**
 KGiSL Institute of Technology, Anna University
 
