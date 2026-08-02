@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emerald Jewelry Analytics AI | OpenRouter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: linear-gradient(135deg, #0a0a0f 0%, #12101a 40%, #0d1117 100%);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      color: #e8dcc8;
+      overflow: hidden;
+    }
+
+    /* ── API Key Banner ── */
+    #api-banner {
+      background: linear-gradient(90deg, #1a0a0a, #2d1010, #1a0a0a);
+      border-bottom: 1px solid #8b1414;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #api-banner label { font-size: 12px; color: #e09090; white-space: nowrap; }
+    #api-key-input {
+      flex: 1;
+      background: #1a0a0a;
+      border: 1px solid #5a1414;
+      border-radius: 8px;
+      color: #e8dcc8;
+      font-size: 13px;
+      padding: 6px 12px;
+      outline: none;
+      font-family: monospace;
+    }
+    #api-key-input:focus { border-color: #d44017; }
+    #save-key-btn {
+      padding: 6px 16px;
+      background: linear-gradient(135deg, #d44017, #8b2a00);
+      border: 1px solid #d44017;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: Georgia, serif;
+      white-space: nowrap;
+    }
+    #save-key-btn:hover { opacity: 0.85; }
+    #key-status { font-size: 11px; color: #3ddc84; white-space: nowrap; display: none; }
+    #help-link {
+      font-size: 11px; color: #e09090; text-decoration: underline;
+      cursor: pointer; white-space: nowrap; background: none; border: none;
+      font-family: inherit;
+    }
+    #help-link:hover { color: #ffb0b0; }
+    #help-panel {
+      display: none;
+      background: #170a0a;
+      border-bottom: 1px solid #5a1414;
+      padding: 12px 20px;
+      font-size: 12px;
+      color: #e8dcc8;
+      line-height: 1.7;
+      flex-shrink: 0;
+    }
+    #help-panel a { color: #e8c060; }
+    #help-panel ol { padding-left: 18px; margin-top: 4px; }
+    #help-panel .close-help {
+      float: right; cursor: pointer; color: #e09090; font-size: 11px;
+      text-decoration: underline; background: none; border: none; font-family: inherit;
+    }
+
+    /* ── Header ── */
+    #header {
+      background: linear-gradient(90deg, #1a1020 0%, #2d1f0e 50%, #1a1020 100%);
+      border-bottom: 1px solid #8b6914;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 20px rgba(139,105,20,0.3);
+      flex-shrink: 0;
+    }
+    #header-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: linear-gradient(135deg, #d4a017, #8b6914);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 12px rgba(212,160,23,0.5);
+      flex-shrink: 0;
+    }
+    #header-title { font-size: 16px; font-weight: bold; color: #d4a017; letter-spacing: 0.5px; }
+    #header-sub { font-size: 11px; color: #a08040; letter-spacing: 1px; }
+    #live-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #3ddc84; box-shadow: 0 0 6px #3ddc84;
+      animation: pulse 2s infinite;
+    }
+    #live-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    #live-label { font-size: 11px; color: #3ddc84; }
+
+    /* ── KPI Strip ── */
+    #kpi-strip {
+      display: flex;
+      background: #1a1008;
+      border-bottom: 1px solid #3a2a10;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .kpi-item {
+      flex: 1; min-width: 100px;
+      padding: 8px 16px; text-align: center;
+      border-right: 1px solid #2a1a08;
+    }
+    .kpi-value { font-size: 15px; font-weight: bold; color: #d4a017; }
+    .kpi-label { font-size: 10px; color: #7a6030; letter-spacing: 0.5px; }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1; overflow-y: auto;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+      scrollbar-width: thin; scrollbar-color: #3a2a10 transparent;
+    }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-thumb { background: #3a2a10; border-radius: 4px; }
+
+    .msg-row {
+      display: flex; gap: 10px;
+      animation: fadeSlide 0.3s ease;
+    }
+    .msg-row.user { justify-content: flex-end; }
+    .msg-row.assistant { justify-content: flex-start; }
+
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0; margin-top: 2px;
+    }
+    .avatar.ai {
+      background: linear-gradient(135deg, #d4a017, #8b5a00);
+      box-shadow: 0 0 8px rgba(212,160,23,0.4);
+    }
+    .avatar.user {
+      background: linear-gradient(135deg, #4a3a20, #2a2010);
+      border: 1px solid #6b5030;
+    }
+
+    .bubble {
+      max-width: 88%; padding: 12px 16px;
+      font-size: 14px; line-height: 1.65;
+    }
+    .bubble.ai {
+      border-radius: 4px 18px 18px 18px;
+      background: linear-gradient(135deg, #1e1810, #2a2010);
+      border: 1px solid #3a2a10;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      color: #e8dcc8;
+    }
+    .bubble.user {
+      border-radius: 18px 18px 4px 18px;
+      background: linear-gradient(135deg, #8b5a00, #6b4000);
+      border: 1px solid #d4a017;
+      box-shadow: 0 2px 12px rgba(212,160,23,0.2);
+      color: #fde8a0;
+    }
+    .bubble strong { color: #d4a017; }
+    .bubble em { color: #c8b080; font-style: italic; }
+    .bubble code {
+      background: #2a1e08; padding: 1px 5px;
+      border-radius: 4px; font-family: monospace; color: #d4a017;
+    }
+    .bubble table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 12px; }
+    .bubble th, .bubble td { border: 1px solid #4a3a10; padding: 5px 8px; }
+    .bubble th { background: #2a1e08; color: #d4a017; }
+    .bubble ul, .bubble ol { padding-left: 18px; }
+
+    /* Typing dots */
+    #typing-row { display: none; }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #d4a017;
+      animation: bounce 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    .dots-wrap {
+      padding: 14px 18px; border-radius: 4px 18px 18px 18px;
+      background: linear-gradient(135deg, #1e1810, #2a2010);
+      border: 1px solid #3a2a10;
+      display: flex; gap: 5px; align-items: center;
+    }
+
+    /* ── Suggestions ── */
+    #suggestions {
+      padding: 8px 16px;
+      border-top: 1px solid #1e1608;
+      overflow-x: auto; display: flex; gap: 8px;
+      flex-shrink: 0; scrollbar-width: none;
+    }
+    #suggestions::-webkit-scrollbar { display: none; }
+    .suggestion-btn {
+      white-space: nowrap; padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(212,160,23,0.1);
+      border: 1px solid #4a3a10;
+      color: #c8a040; cursor: pointer;
+      font-size: 11px; font-family: Georgia, serif;
+      transition: all 0.2s;
+    }
+    .suggestion-btn:hover {
+      background: rgba(212,160,23,0.2);
+      border-color: #d4a017;
+    }
+
+    /* ── Input Area ── */
+    #input-area {
+      padding: 12px 16px 16px;
+      background: linear-gradient(0deg, #0d0a05, #12100a);
+      border-top: 1px solid #2a1e08;
+      display: flex; gap: 10px; align-items: flex-end;
+      flex-shrink: 0;
+    }
+    #msg-input {
+      flex: 1; resize: none;
+      background: #1a140a; border: 1px solid #4a3a10;
+      border-radius: 12px; color: #e8dcc8;
+      font-size: 14px; padding: 10px 14px;
+      outline: none; font-family: Georgia, serif;
+      line-height: 1.5; transition: border-color 0.2s;
+      overflow: hidden; min-height: 42px; max-height: 120px;
+    }
+    #msg-input:focus { border-color: #d4a017; }
+    #msg-input::placeholder { color: #5a4a20; }
+    #send-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #2a2010; border: 1px solid #3a2a10;
+      color: #4a3a20; cursor: not-allowed;
+      font-size: 18px; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.2s; line-height: 1;
+    }
+    #send-btn.active {
+      background: linear-gradient(135deg, #d4a017, #8b5a00);
+      border-color: #d4a017; color: #fff; cursor: pointer;
+      box-shadow: 0 0 12px rgba(212,160,23,0.4);
+    }
+
+    /* ── Animations ── */
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} }
+    @keyframes fadeSlide { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  </style>
+</head>
+<body>
+
+  <!-- API Key Banner -->
+  <div id="api-banner">
+    <label>🔑 OpenRouter API Key:</label>
+    <input type="password" id="api-key-input" placeholder="Paste your OpenRouter API key here (sk-or-...)" />
+    <select id="model-select" style="background:#1a0a0a;border:1px solid #5a1414;border-radius:8px;color:#e8dcc8;font-size:12px;padding:6px 10px;outline:none;cursor:pointer;">
+      <optgroup label="🆓 Free Models — Working Now (May 2026)">
+        <option value="openai/gpt-oss-120b:free" selected>⭐ OpenAI GPT-OSS 120B (Free) — Best</option>
+        <option value="deepseek/deepseek-v4-flash:free">DeepSeek V4 Flash (Free)</option>
+        <option value="nvidia/nemotron-3-super-120b-a12b:free">NVIDIA Nemotron 3 Super 120B (Free)</option>
+        <option value="google/gemma-4-31b-it:free">Google Gemma 4 31B (Free)</option>
+        <option value="z-ai/glm-4.5-air:free">Z.ai GLM 4.5 Air (Free)</option>
+        <option value="openai/gpt-oss-20b:free">OpenAI GPT-OSS 20B (Free)</option>
+        <option value="minimax/minimax-m2.5:free">MiniMax M2.5 (Free)</option>
+        <option value="moonshotai/kimi-k2.6:free">MoonshotAI Kimi K2.6 (Free)</option>
+        <option value="nvidia/nemotron-nano-9b-v2:free">NVIDIA Nemotron Nano 9B (Free)</option>
+        <option value="google/gemma-4-26b-a4b-it:free">Google Gemma 4 26B MoE (Free)</option>
+        <option value="openrouter/owl-alpha">OpenRouter Owl Alpha (Free)</option>
+      </optgroup>
+      <optgroup label="💰 Paid Models (Higher Quality)">
+        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+        <option value="anthropic/claude-3-haiku">Claude 3 Haiku (Cheap)</option>
+        <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+        <option value="google/gemini-flash-1.5">Gemini 1.5 Flash</option>
+      </optgroup>
+    </select>
+    <button id="save-key-btn" onclick="saveKey()">Save Key</button>
+    <span id="key-status">✅ Key saved!</span>
+    <button id="help-link" onclick="toggleHelp()">No key? Get one free →</button>
+  </div>
+
+  <!-- Help Panel -->
+  <div id="help-panel">
+    <button class="close-help" onclick="toggleHelp()">✕ Close</button>
+    <strong style="color:#e8c060;">How to get a free API key (takes ~1 minute):</strong>
+    <ol>
+      <li>Go to <a href="https://openrouter.ai" target="_blank" rel="noopener">openrouter.ai</a> and click <strong>Sign Up</strong> (free — email or Google login)</li>
+      <li>Once logged in, click <strong>Keys</strong> in the dashboard</li>
+      <li>Click <strong>Create Key</strong>, name it anything, then copy it (starts with <code>sk-or-v1-...</code>)</li>
+      <li>Paste it into the box above and click <strong>Save Key</strong></li>
+      <li>Pick a <strong>🆓 Free Model</strong> from the dropdown — no payment needed — and start chatting!</li>
+    </ol>
+  </div>
+
+  <!-- Header -->
+  <div id="header">
+    <div id="header-icon">💎</div>
+    <div>
+      <div id="header-title">Emerald Jewelry Analytics AI</div>
+      <div id="header-sub">POWER BI DASHBOARD ASSISTANT &bull; POWERED BY OPENROUTER AI</div>
+    </div>
+    <div id="live-wrap">
+      <div id="live-dot"></div>
+      <span id="live-label">LIVE</span>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div id="kpi-strip">
+    <div class="kpi-item"><div class="kpi-value">₹7.32B</div><div class="kpi-label">Total Revenue</div></div>
+    <div class="kpi-item"><div class="kpi-value">2,35,212</div><div class="kpi-label">Invoices</div></div>
+    <div class="kpi-item"><div class="kpi-value">150+</div><div class="kpi-label">Products</div></div>
+    <div class="kpi-item"><div class="kpi-value">2017</div><div class="kpi-label">Peak Year</div></div>
+    <div class="kpi-item"><div class="kpi-value">86%</div><div class="kpi-label">Gold Share</div></div>
+  </div>
+
+  <!-- Messages -->
+  <div id="messages">
+    <!-- Welcome message injected by JS -->
+  </div>
+
+  <!-- Suggestions -->
+  <div id="suggestions"></div>
+
+  <!-- Input -->
+  <div id="input-area">
+    <textarea id="msg-input" rows="1" placeholder="Ask anything about the Emerald Jewelry dashboard..."></textarea>
+    <button id="send-btn" onclick="sendMessage()">➤</button>
+  </div>
+
+<script>
+// ── Data Context ──────────────────────────────────────────────────────────────
+const DATA_CONTEXT = `You are an expert Business Analytics AI Assistant for Emerald Jewelry Pvt. Ltd., trained on their actual Power BI sales dashboard data.
+
+PROJECT: "AI-Powered Sales Performance Analytics: Developing a Smart Dashboard for Revenue Optimization in Emerald Jewelry Pvt. Ltd."
+Student: S. Pratheksha | MBA (Business Analytics & HR)
+Tools used: Power BI, SQL, Python
+
+=== ACTUAL DATA FROM THE DATASET (200,000+ records, 2013–2025) ===
+
+REVENUE BY METAL TYPE:
+- Gold Jewellery: ₹4,629,453,845 (~86% of revenue)
+- Gold Coin: ₹281,294,828
+- Diamond: ₹248,782,938
+- Silver: ₹67,158,456
+- Platinum: ₹24,041,934
+- Silver Coin: ₹2,115,161
+
+YEARLY REVENUE TREND:
+- 2013: ₹382.8M | 2014: ₹593.4M | 2015: ₹637.8M | 2016: ₹597.1M
+- 2017: ₹659.9M (PEAK pre-COVID) | 2018: ₹543.3M | 2019: ₹395.4M
+- 2020: ₹172.0M (COVID LOWEST - 74% drop) | 2021: ₹370.1M (recovery)
+- 2022: ₹376.5M | 2023: ₹417.4M (strong recovery) | 2024: ₹9.1M (partial) | 2025: ₹98.7M (partial)
+
+TOP PRODUCTS BY UNITS SOLD (PCS):
+1. Studs: 13,599 | 2. Gold 22K Coin: 11,214 | 3. Stud Drops: 10,171
+4. Ring-Ladies: 8,038 | 5. Chains: 6,855 | 6. Pendant: 4,766
+7. Bangles-Round: 4,354 | 8. Necklace: 4,127 | 9. Silver Idol: 3,606
+10. Pendant With Chain: 2,781 | 11. Ring Gents: 2,396 | 12. Gold 24K Coin: 1,660
+13. Long Necklace: 1,388 | 14. Bangles-Oval: 1,063 | 15. Gold Ring: 1,043
+
+TOP SALESPERSONS BY REVENUE:
+RE0100: ₹323.3M | RE1205: ₹245.9M | RE0211: ₹234.0M | RE0080: ₹219.5M
+RE0082: ₹208.3M | RE1335: ₹200.0M | RE0031: ₹165.7M | RE0518: ₹152.7M
+RE0644: ₹134.2M | RE0468: ₹109.9M
+
+TOTAL INVOICES BY YEAR:
+2013: 16,653 | 2014: 25,049 | 2015: 28,331 | 2016: 23,127 | 2017: 26,215
+2018: 21,724 | 2019: 18,678 | 2020: 5,818 | 2021: 9,431 | 2022: 11,644
+2023: 12,708 | 2024: 11,984 | 2025: 22,876 | GRAND TOTAL: 235,212 invoices
+
+REVENUE BY CATEGORY (TOTAL):
+Total Net Amount: ₹7,324,144,237 (₹732 Crores)
+Gold Jewellery: ₹6,062,436,689 | Diamond: ₹526,449,469
+Gold Coin: ₹470,434,402 | Silver: ₹222,872,023 | Platinum: ₹35,497,665
+
+MAKING RATE BY PRODUCT:
+Ring: ₹3,25,200 | Nose Pin: ₹2,70,900 | Pendant With Chain: ₹1,28,200
+Pendant: ₹80,600 | PLT Fitting Gold: ₹80,500 | Bangles: ₹84,400
+Chains: ₹32,500 | Coin: ₹12,698 | Jumkhas: ₹17,100 | Necklace: ₹98,800
+
+STONE DISCOUNT: Diamond ₹84.9L | Gold Jewellery ₹1.8L | Platinum ₹44.6K | Total ₹87.1L
+MAKING DISCOUNT: Gold Jewellery ₹29.6Cr | Silver ₹70.8L | Diamond ₹30.4L | Gold Coin ₹30.2L
+
+KEY INSIGHTS:
+1. Peak revenue 2017 (₹659.9M), COVID 2020 caused 74% crash to ₹172M
+2. Gold Jewellery dominates — 86% of total revenue
+3. Studs & Rings are top-volume products
+4. Top salesperson RE0100 generated ₹323.3M
+5. Strong recovery post-2021, growing each year
+6. Diamond segment: ₹526M revenue, highest stone discount ₹84.9L
+7. Branch: CBEEXE (Coimbatore Executive)
+
+DASHBOARD VISUALIZATIONS (Power BI):
+- Top 10 products by revenue (bar chart)
+- Sales by metal category (pie/donut chart)
+- Yearly/monthly revenue trend (line chart)
+- Making rate by product category (bar chart)
+- Invoice count by year (column chart)
+- Salesperson performance leaderboard (table)
+- KPIs: Total Revenue ₹732Cr, Total PCS, Total Invoices 2,35,212, Avg Making Rate
+
+Answer questions about this dashboard accurately. Format numbers in Indian style (₹ with Lakhs/Crores).
+
+RESPONSE FORMAT RULES — ALWAYS FOLLOW:
+1. Always give DETAILED, STRUCTURED answers — never one-liners.
+2. Use markdown formatting in every response:
+   - ## for section headings
+   - ### for sub-headings
+   - **bold** for key numbers and important terms
+   - | tables | with | headers | for comparisons and data
+   - - bullet points for lists
+   - > blockquotes for key conclusions
+3. For prediction/forecast questions: always show methodology, a data table, scenarios (conservative/base/optimistic), growth drivers, and a bottom line conclusion.
+4. For comparison questions: always use a markdown table.
+5. For trend questions: list year-by-year data in a table.
+6. Always end with a "### 📌 Key Takeaway" section.
+7. Minimum response length: 150 words. Never give a one-sentence answer.`;
+
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let conversationHistory = [];
+let geminiApiKey = localStorage.getItem('openrouter_api_key') || '';
+let suggestionsShown = true;
+
+const SUGGESTED_QUESTIONS = [
+  "What is the total revenue for Emerald Jewelry?",
+  "Which product category generates the most sales?",
+  "How did COVID-19 impact sales in 2020?",
+  "Who are the top 5 salespersons by revenue?",
+  "Which metal type dominates revenue?",
+  "What are the top 10 products by units sold?",
+  "How has business recovered post-COVID?",
+  "Predict sales trend for 2026",
+];
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  // Restore API key if saved
+  if (geminiApiKey) {
+    document.getElementById('api-key-input').value = geminiApiKey;
+    document.getElementById('key-status').style.display = 'inline';
+  } else {
+    document.getElementById('help-panel').style.display = 'block';
+  }
+
+  // Welcome message
+  appendMessage('assistant', `Welcome to the <strong>Emerald Jewelry Analytics AI</strong> ✨<br><br>
+I'm your intelligent assistant for the Power BI Sales Performance Dashboard. I have been fully trained on the actual sales data from <strong>Emerald Jewelry Pvt. Ltd.</strong> — covering 2,35,212 invoices from 2013 to 2025, with <strong>₹7.32 billion</strong> in total revenue.<br><br>
+Ask me anything about:<br>
+• Revenue trends, product performance & KPIs<br>
+• Salesperson insights & category breakdowns<br>
+• COVID impact analysis & business recovery<br>
+• Making rates, discounts & diamond segment<br><br>
+<em>This chatbot is part of the MBA Business Analytics project by S. Pratheksha.</em>`);
+
+  // Render suggestions
+  renderSuggestions();
+
+  // Input listeners
+  const input = document.getElementById('msg-input');
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    updateSendBtn();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+};
+
+// ── Help Panel Toggle ────────────────────────────────────────────────────────
+function toggleHelp() {
+  const panel = document.getElementById('help-panel');
+  panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+}
+
+// ── Save API Key ──────────────────────────────────────────────────────────────
+function saveKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { alert('Please paste your OpenRouter API key first!'); return; }
+  geminiApiKey = val;
+  localStorage.setItem('openrouter_api_key', val);
+  const status = document.getElementById('key-status');
+  status.style.display = 'inline';
+  setTimeout(() => status.style.display = 'none', 3000);
+}
+
+// ── Suggestions ───────────────────────────────────────────────────────────────
+function renderSuggestions() {
+  const el = document.getElementById('suggestions');
+  el.innerHTML = '';
+  SUGGESTED_QUESTIONS.slice(0, 5).forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'suggestion-btn';
+    btn.textContent = q;
+    btn.onclick = () => sendMessage(q);
+    el.appendChild(btn);
+  });
+}
+
+function hideSuggestions() {
+  if (suggestionsShown) {
+    document.getElementById('suggestions').style.display = 'none';
+    suggestionsShown = false;
+  }
+}
+
+// ── Send Message ──────────────────────────────────────────────────────────────
+async function sendMessage(text) {
+  const input = document.getElementById('msg-input');
+  const userText = text || input.value.trim();
+  if (!userText) return;
+
+  if (!geminiApiKey) {
+    alert('⚠️ Please enter and save your OpenRouter API key at the top first!');
+    return;
+  }
+
+  input.value = '';
+  input.style.height = 'auto';
+  updateSendBtn();
+  hideSuggestions();
+
+  appendMessage('user', escapeHtml(userText));
+  showTyping();
+
+  conversationHistory.push({ role: 'user', content: userText });
+
+  try {
+    // Build messages array in OpenAI-compatible format for OpenRouter
+    const openRouterMessages = [
+      { role: 'system', content: DATA_CONTEXT },
+      ...conversationHistory
+    ];
+
+    const selectedModel = document.getElementById('model-select').value;
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${geminiApiKey}`,
+        'HTTP-Referer': window.location.href,
+        'X-Title': 'Emerald Jewelry Analytics AI'
+      },
+      body: JSON.stringify({
+        model: selectedModel,
+        messages: openRouterMessages,
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error.message || 'OpenRouter API error');
+    }
+
+    const aiText = data.choices?.[0]?.message?.content
+      || 'Sorry, I could not get a response. Please try again.';
+
+    hideTyping();
+    conversationHistory.push({ role: 'assistant', content: userText });
+    // Fix: update last entry to assistant response
+    conversationHistory[conversationHistory.length - 1] = { role: 'assistant', content: aiText };
+    appendMessage('assistant', formatMarkdown(aiText));
+
+  } catch (err) {
+    hideTyping();
+    appendMessage('assistant', `⚠️ <strong>Error:</strong> ${escapeHtml(err.message)}<br><br>
+      💡 <strong>Try this fix:</strong> Switch to <strong>DeepSeek V3 (Free)</strong> from the model dropdown at the top — it's the most reliable free model right now.`);
+  }
+}
+
+// ── DOM Helpers ───────────────────────────────────────────────────────────────
+function appendMessage(role, html) {
+  const container = document.getElementById('messages');
+
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const avatarHtml = role === 'assistant'
+    ? `<div class="avatar ai">💎</div>`
+    : `<div class="avatar user">👤</div>`;
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role === 'assistant' ? 'ai' : 'user'}`;
+  bubble.innerHTML = html;
+
+  if (role === 'assistant') {
+    row.innerHTML = avatarHtml;
+    row.appendChild(bubble);
+  } else {
+    row.appendChild(bubble);
+    row.innerHTML += avatarHtml;
+  }
+
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function showTyping() {
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row assistant';
+  row.id = 'typing-row';
+  row.innerHTML = `
+    <div class="avatar ai">💎</div>
+    <div class="dots-wrap">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>`;
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-row');
+  if (el) el.remove();
+}
+
+function updateSendBtn() {
+  const btn = document.getElementById('send-btn');
+  const val = document.getElementById('msg-input').value.trim();
+  btn.className = val ? 'active' : '';
+}
+
+// ── Text Formatting ───────────────────────────────────────────────────────────
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatMarkdown(text) {
+  const lines = text.split('\n');
+  let html = '';
+  let inTable = false;
+  let tableHtml = '';
+  let inUL = false;
+  let inOL = false;
+  let olCounter = 0;
+
+  const flushList = () => {
+    if (inUL) { html += '</ul>'; inUL = false; }
+    if (inOL) { html += '</ol>'; inOL = false; olCounter = 0; }
+  };
+
+  const flushTable = () => {
+    if (inTable) { html += tableHtml + '</tbody></table>'; inTable = false; tableHtml = ''; }
+  };
+
+  const inlineFormat = (line) => {
+    return line
+      .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#e8c060">$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em style="color:#c8b080">$1</em>')
+      .replace(/_(.+?)_/g, '<em style="color:#c8b080">$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Blank line
+    if (line.trim() === '') {
+      flushList();
+      flushTable();
+      html += '<br>';
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) {
+      flushList(); flushTable();
+      html += '<hr style="border:none;border-top:1px solid #4a3a10;margin:10px 0;">';
+      continue;
+    }
+
+    // Table row
+    if (line.trim().startsWith('|')) {
+      flushList();
+      const cols = line.trim().split('|').filter((_, i, a) => i > 0 && i < a.length - 1);
+      // separator row (|---|---|)
+      if (cols.every(c => /^[-: ]+$/.test(c))) {
+        continue; // skip separator
+      }
+      if (!inTable) {
+        flushTable();
+        inTable = true;
+        tableHtml = `<table style="border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;">
+          <thead><tr>${cols.map(c => `<th style="border:1px solid #5a4010;padding:7px 10px;background:#2a1e08;color:#d4a017;text-align:left;">${inlineFormat(c.trim())}</th>`).join('')}</tr></thead><tbody>`;
+      } else {
+        tableHtml += `<tr>${cols.map((c,ci) => `<td style="border:1px solid #3a2a10;padding:6px 10px;color:${ci===0?'#d4a017':'#e8dcc8'};">${inlineFormat(c.trim())}</td>`).join('')}</tr>`;
+      }
+      continue;
+    } else {
+      flushTable();
+    }
+
+    // Headings
+    if (/^### (.+)$/.test(line)) {
+      flushList();
+      html += `<div style="color:#d4a017;font-size:14px;font-weight:bold;margin:14px 0 6px;">${inlineFormat(line.replace(/^### /, ''))}</div>`;
+      continue;
+    }
+    if (/^## (.+)$/.test(line)) {
+      flushList();
+      html += `<div style="color:#e8b020;font-size:15px;font-weight:bold;margin:16px 0 6px;border-bottom:1px solid #3a2a10;padding-bottom:4px;">${inlineFormat(line.replace(/^## /, ''))}</div>`;
+      continue;
+    }
+    if (/^# (.+)$/.test(line)) {
+      flushList();
+      html += `<div style="color:#f0c030;font-size:17px;font-weight:bold;margin:18px 0 8px;">${inlineFormat(line.replace(/^# /, ''))}</div>`;
+      continue;
+    }
+
+    // Blockquote
+    if (/^> (.+)$/.test(line)) {
+      flushList();
+      html += `<div style="border-left:3px solid #d4a017;padding:8px 14px;margin:10px 0;background:#1e1508;color:#e8c060;border-radius:0 8px 8px 0;font-style:italic;">${inlineFormat(line.replace(/^> /, ''))}</div>`;
+      continue;
+    }
+
+    // Unordered list
+    if (/^[-•*] (.+)$/.test(line)) {
+      if (!inUL) { if (inOL) { inOL = false; html += '</ol>'; } inUL = true; html += '<ul style="padding-left:20px;margin:6px 0;">'; }
+      html += `<li style="margin:4px 0;color:#e8dcc8;">${inlineFormat(line.replace(/^[-•*] /, ''))}</li>`;
+      continue;
+    }
+
+    // Numbered list
+    if (/^\d+\. (.+)$/.test(line)) {
+      if (!inOL) { if (inUL) { inUL = false; html += '</ul>'; } inOL = true; html += '<ol style="padding-left:20px;margin:6px 0;">'; }
+      html += `<li style="margin:4px 0;color:#e8dcc8;">${inlineFormat(line.replace(/^\d+\. /, ''))}</li>`;
+      continue;
+    }
+
+    // Normal paragraph line
+    flushList();
+    html += `<span style="display:block;margin:3px 0;">${inlineFormat(line)}</span>`;
+  }
+
+  flushList();
+  flushTable();
+  return html;
+}
+</script>
+</body>
+</html>
